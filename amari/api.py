@@ -63,9 +63,9 @@ class AmariClient:
         *,
         useAntirateLimit: bool = True,
         session: Optional[aiohttp.ClientSession] = None,
-        max_requests: int = 55,
+        max_requests: int = 60,
         cache_ttl: int = 60,
-        maxbytes: int = 25 * 1024 * 1024,  # 25 MiB
+        maxbytes: int = 25 * 1024,  # 25 KiB
     ):
         self.session = session or aiohttp.ClientSession()
         self._default_headers = {"Authorization": token}
@@ -147,6 +147,16 @@ class AmariClient:
         else:
             data = await self.request(f"guild/{guild_id}/member/{user_id}")
             return User(guild_id, data)
+        
+    def generate_synthetic_amari_user(user_id: int, username: str = '') -> dict:
+        return {
+            "id": str(user_id),
+            "username": '',
+            "exp": 0,
+            "level": 0,
+            "weeklyExp": 0,
+        }
+
 
     async def fetch_users(
         self, guild_id: int, user_ids: List[int], cache: bool = False
@@ -189,11 +199,30 @@ class AmariClient:
                     extra_headers={"Content-Type": "application/json"},
                     json=body,
                 )
-                for user_data in fetched_data["members"]:
+
+                returned_members = fetched_data.get("members") or [] 
+                returned_ids = {int(user["id"]) for user in returned_members}
+                missing_ids = set(uncached_user_ids) - returned_ids
+                # Users who are not in the bots database are not returned
+                # to prevent additional calls the cache retains a fake payload filled with 0's
+
+                for user_data in returned_members:
                     user_id = int(user_data["id"])
                     key = ("fetch_user", guild_id, user_id)
                     await self.cache.set(key, user_data)
                     members.append(user_data)
+                
+                for user_id in missing_ids:
+                    fake_payload = {
+                        "id": str(user_id),
+                        "username": '',
+                        "exp": 0,
+                        "level": 0,
+                        "weeklyExp": 0,
+                    }
+                    key = ("fetch_user", guild_id, user_id)
+                    await self.cache.set(key, fake_payload)
+                    members.append(fake_payload)
 
             data = {
                 "members": members,
