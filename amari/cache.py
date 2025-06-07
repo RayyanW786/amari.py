@@ -26,7 +26,7 @@ class Cache:
         Maximum total size of cached data in bytes.
     """
 
-    def __init__(self, ttl: int, maxbytes: int = 25 * 1024):  # 25 KiB
+    def __init__(self, ttl: int, maxbytes: int = 25 * 1024 * 1024):  # 25 MiB
         self.ttl = ttl
         self.maxbytes = maxbytes
         self.cache: OrderedDict[Tuple, CacheEntry] = OrderedDict()

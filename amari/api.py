@@ -65,7 +65,7 @@ class AmariClient:
         session: Optional[aiohttp.ClientSession] = None,
         max_requests: int = 60,
         cache_ttl: int = 60,
-        maxbytes: int = 25 * 1024,  # 25 KiB
+        maxbytes: int = 25 * 1024 * 1024,  # 25 MiB
     ):
         self.session = session or aiohttp.ClientSession()
         self._default_headers = {"Authorization": token}
@@ -210,7 +210,7 @@ class AmariClient:
                         "level": 0,
                         "weeklyExp": 0,
                     }
-                    key = ("fetch_user", guild_id, str(user_id))
+                    key = ("fetch_user", guild_id, user_id)
                     await self.cache.set(key, fake_payload)
                     members.append(fake_payload)
 
