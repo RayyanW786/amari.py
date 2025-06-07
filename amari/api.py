@@ -148,16 +148,6 @@ class AmariClient:
             data = await self.request(f"guild/{guild_id}/member/{user_id}")
             return User(guild_id, data)
         
-    def generate_synthetic_amari_user(user_id: int, username: str = '') -> dict:
-        return {
-            "id": str(user_id),
-            "username": '',
-            "exp": 0,
-            "level": 0,
-            "weeklyExp": 0,
-        }
-
-
     async def fetch_users(
         self, guild_id: int, user_ids: List[int], cache: bool = False
     ) -> Users:
@@ -220,7 +210,7 @@ class AmariClient:
                         "level": 0,
                         "weeklyExp": 0,
                     }
-                    key = ("fetch_user", guild_id, user_id)
+                    key = ("fetch_user", guild_id, str(user_id))
                     await self.cache.set(key, fake_payload)
                     members.append(fake_payload)
 
